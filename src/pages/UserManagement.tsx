@@ -1,6 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Search, Filter, Edit, Trash, Check, X, Plus } from 'lucide-react';
+import UserService from '../services/users';
+import { User } from '../services/mockData';
+
 const UserManagement = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    loadUsers();
+  }, [currentPage, searchQuery]);
+
+  const loadUsers = async () => {
+    setLoading(true);
+    const filters = searchQuery ? { search: searchQuery } : {};
+    const response = await UserService.getUsersListAsync(currentPage, 10, filters);
+    
+    if (response.success) {
+      setUsers(response.data.users);
+      setTotalPages(response.data.totalPages);
+    } else {
+      console.error(response.message);
+    }
+    
+    setLoading(false);
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const getUserInitials = (firstName: string, lastName: string) => {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    if (diffInHours < 48) return '1 day ago';
+    return `${Math.floor(diffInHours / 24)} days ago`;
+  };
+
+  if (loading) {
+    return <div className="w-full flex justify-center items-center py-20">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4169e1]"></div>
+    </div>;
+  }
+
   return <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -16,7 +70,13 @@ const UserManagement = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input type="text" placeholder="Search users..." className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#4169e1]" />
+            <input 
+              type="text" 
+              placeholder="Search users..." 
+              value={searchQuery}
+              onChange={handleSearch}
+              className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#4169e1]" 
+            />
           </div>
           <button className="inline-flex items-center text-sm text-muted-foreground mt-2 sm:mt-0">
             <Filter size={14} className="mr-1" />
@@ -51,60 +111,11 @@ const UserManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {[{
-              name: 'Dr. John Davis',
-              email: 'john.davis@novocuris.com',
-              role: 'Head of Department',
-              status: 'Active',
-              lastActive: '2 hours ago',
-              initials: 'JD'
-            }, {
-              name: 'Sarah Miller',
-              email: 'sarah.miller@novocuris.com',
-              role: 'Hospital Super Administrator',
-              status: 'Active',
-              lastActive: '5 mins ago',
-              initials: 'SM'
-            }, {
-              name: 'Robert Wilson',
-              email: 'robert.wilson@novocuris.com',
-              role: 'Administrator',
-              status: 'Pending Activation',
-              lastActive: 'Never',
-              initials: 'RW'
-            }, {
-              name: 'Karen Lee',
-              email: 'karen.lee@novocuris.com',
-              role: 'Management',
-              status: 'Active',
-              lastActive: '1 day ago',
-              initials: 'KL'
-            }, {
-              name: 'Alex Peterson',
-              email: 'alex.peterson@novocuris.com',
-              role: 'Management',
-              status: 'Active',
-              lastActive: '3 hours ago',
-              initials: 'AP'
-            }, {
-              name: 'Maria Rodriguez',
-              email: 'maria.rodriguez@novocuris.com',
-              role: 'Head of Department',
-              status: 'Active',
-              lastActive: 'Just now',
-              initials: 'MR'
-            }, {
-              name: 'James Thompson',
-              email: 'james.thompson@novocuris.com',
-              role: 'Administrator',
-              status: 'Inactive',
-              lastActive: '2 weeks ago',
-              initials: 'JT'
-            }].map((user, i) => <tr key={i} className="bg-card hover:bg-muted/50 transition-colors">
+              {users.map((user) => <tr key={user.id} className="bg-card hover:bg-muted/50 transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-[#4169e1]/10 flex items-center justify-center text-[#4169e1] font-medium text-sm">
-                        {user.initials}
+                        {getUserInitials(user.firstName, user.lastName)}
                       </div>
                       <div>
                         <div className="font-medium text-sm">{user.name}</div>
@@ -121,18 +132,18 @@ const UserManagement = () => {
                   </td>
                   <td className="py-3 px-4 hidden sm:table-cell">
                     <div className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                      {user.role}
+                      {user.role.replace('_', ' ').toUpperCase()}
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <div className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${user.status === 'Active' ? 'bg-green-100 text-green-800' : user.status === 'Inactive' ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {user.status === 'Active' ? <Check size={12} /> : user.status === 'Inactive' ? <X size={12} /> : null}
-                      {user.status}
+                    <div className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {user.status === 'active' ? <Check size={12} /> : <X size={12} />}
+                      {user.status === 'active' ? 'Active' : 'Inactive'}
                     </div>
                   </td>
                   <td className="py-3 px-4 hidden md:table-cell">
                     <div className="text-sm text-muted-foreground">
-                      {user.lastActive}
+                      {formatDate(user.createdAt)}
                     </div>
                   </td>
                   <td className="py-3 px-4 text-right">
@@ -152,13 +163,21 @@ const UserManagement = () => {
       </div>
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
         <div className="text-sm text-muted-foreground order-2 sm:order-1">
-          Showing 7 of 24 users
+          Showing page {currentPage} of {totalPages} ({users.length} users)
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
-          <button className="flex-1 sm:flex-none inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1 text-sm font-medium">
+          <button 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Previous
           </button>
-          <button className="flex-1 sm:flex-none inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1 text-sm font-medium">
+          <button 
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Next
           </button>
         </div>

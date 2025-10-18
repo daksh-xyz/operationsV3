@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, MessageSquare, GitBranch, Play, FileText, BarChart, Settings, Phone, Users, ChevronDown, ChevronRight, Menu, X } from 'lucide-react';
-import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { toggleSidebar } from '../../store/slices/uiSlice';
-import type { RootState } from '../../store';
 
-const Sidebar = () => {
+interface SidebarProps {
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+}
+
+const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const location = useLocation();
-  const dispatch = useAppDispatch();
-  const uiState = useAppSelector((state: RootState) => state.ui) as any;
-  const sidebarOpen = uiState.sidebarOpen;
   const [expandedSection, setExpandedSection] = useState<string | null>('management');
+  
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section);
   };
+  
   const isActive = (path: string) => {
     return location.pathname === path;
   };
@@ -22,7 +23,7 @@ const Sidebar = () => {
       <div className="h-16 border-b border-border flex items-center px-6">
         <button 
           className="p-2 rounded-md hover:bg-gray-100 transition-all duration-300 ease-in-out transform hover:scale-105" 
-          onClick={() => dispatch(toggleSidebar())}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
           title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
         >
           <div className="transition-all duration-300 ease-in-out transform">

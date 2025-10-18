@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setSidebarOpen } from '../../store/slices/uiSlice';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 const Layout = () => {
   const location = useLocation();
-  const dispatch = useAppDispatch();
-  const { sidebarOpen } = useAppSelector((state) => state.ui);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -22,11 +19,11 @@ const Layout = () => {
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
-    dispatch(setSidebarOpen(false));
-  }, [location.pathname, dispatch]);
+    setSidebarOpen(false);
+  }, [location.pathname]);
   return <div className="flex h-screen bg-background overflow-hidden">
       {/* Mobile sidebar backdrop */}
-      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-20 lg:hidden transition-opacity duration-300 ease-in-out animate-in fade-in" onClick={() => dispatch(setSidebarOpen(false))} />}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-20 lg:hidden transition-opacity duration-300 ease-in-out animate-in fade-in" onClick={() => setSidebarOpen(false)} />}
       
       {/* Sidebar - responsive behavior with smooth animations */}
       <div className={`fixed inset-y-0 left-0 z-30 transform transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 ${
@@ -34,7 +31,7 @@ const Layout = () => {
           ? 'translate-x-0 w-64' 
           : '-translate-x-full lg:translate-x-0 lg:w-20'
       }`}>
-        <Sidebar />
+        <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       </div>
       <div className="flex flex-col flex-1 w-full overflow-hidden transition-all duration-300 ease-in-out">
         <Header />

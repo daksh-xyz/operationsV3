@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import { store } from './store';
+import { AuthProvider } from './hooks/useAuth';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
@@ -15,11 +14,15 @@ import VoiceAgent from './pages/VoiceAgent';
 import UserManagement from './pages/UserManagement';
 import Roles from './pages/Roles';
 import Departments from './pages/Departments';
+import { getValueFromLocalStorage } from './utils/generic';
 
 export function App() {
+  // Get user data from localStorage on app load
+  const userData = getValueFromLocalStorage('user');
+
   return (
-    <Provider store={store}>
-      <Router>
+    <Router>
+      <AuthProvider userData={userData}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={
@@ -40,7 +43,7 @@ export function App() {
             <Route path="departments" element={<Departments />} />
           </Route>
         </Routes>
-      </Router>
-    </Provider>
+      </AuthProvider>
+    </Router>
   );
 }

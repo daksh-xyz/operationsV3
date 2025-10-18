@@ -1,97 +1,96 @@
-// In Vite, use import.meta.env for environment variables in the browser.
-// Use VITE_API_URL in your .env files (e.g. VITE_API_URL="http://localhost:3001/api").
-const env = (import.meta as unknown) as { env?: Record<string, string | undefined> };
-const API_BASE_URL = env.env?.VITE_API_URL || 'http://localhost:3001/api';
+import axios, { AxiosResponse, Method } from "axios";
+import { HTTPMethod } from "../enums";
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
+interface ErrorObj {
+  method: string;
+  url: string;
+  status: number;
+  message: string;
 }
 
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  department?: string;
-}
+const logSuccess = async (
+  response: AxiosResponse<any>,
+  requestDurationInMs: number
+) => {
+  console.log(`Received response: ${response.status} ${response.config.url}`, {
+    url: response.config.url,
+    status: response.status,
+    requestDurationInMs: requestDurationInMs,
+  });
+  console.log("Response data", { responseData: response.data });
+};
 
-export interface AuthResponse {
-  success: boolean;
-  user: User;
-  token: string;
-}
+const logError = async (error: ErrorObj, requestDurationInMs: number) => {
+  console.log(`Received error: ${error.status} ${error.method} ${error.url}`, {
+    error: error,
+    requestDurationInMs: requestDurationInMs,
+  });
+};
 
-export interface ApiError {
-  error: string;
-}
+const logStart = async (
+  method: Method,
+  url: string,
+  queryStringParams: Record<string, any>
+) => {
+  console.log(`Starting: ${method} ${url}`, {
+    method: method,
+    url: url,
+    queryStringParams: queryStringParams,
+  });
+};
 
-class ApiService {
-  private baseURL: string;
+export const handleApiRequest = async (
+  method: HTTPMethod,
+  url: string,
+  queryStringParams: Record<string, any> = {},
+  headers: Record<string, string> = {},
+  data: any = undefined
+) => {
+  logStart(method as Method, url, queryStringParams);
 
-  constructor() {
-    this.baseURL = API_BASE_URL;
-  }
+  const startTime = Date.now();
+  const returnValue = {
+    status: 0,
+    data: {} as any,
+    headers: headers,
+    message: "",
+  };
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
-    const token = localStorage.getItem('token');
+  try {
+    const response = await axios({
+      method: method as Method,
+      url,
+      params: queryStringParams,
+      headers: headers,
+      data: data,
+      timeout: 30000,
+    });
 
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
-      },
-      ...options,
+    const requestDurationInMs = Date.now() - startTime;
+    logSuccess(response, requestDurationInMs);
+    
+    const { status } = response;
+    returnValue.data = response?.data;
+    returnValue.status = status;
+    returnValue.message = response?.data?.message || "";
+    
+    return returnValue;
+  } catch (error: any) {
+    const requestDurationInMs = Date.now() - startTime;
+    const errorObject: ErrorObj = {
+      method: method,
+      url: url,
+      status: error?.response?.status || 0,
+      message: error?.response?.data?.message || error?.message || "Network error",
     };
-
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'An error occurred');
-      }
-
-      return data;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Network error');
-    }
+    logError(errorObject, requestDurationInMs);
+    
+    returnValue.status = error?.response?.status || 0;
+    returnValue.data = {
+      message: error?.response?.data?.message || error?.message || "Network error",
+    };
+    returnValue.message = error?.response?.data?.message || error?.message || "Network error";
+    
+    return returnValue;
   }
-
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    return this.request<AuthResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-  }
-
-  async logout(): Promise<{ success: boolean; message: string }> {
-    return this.request<{ success: boolean; message: string }>('/auth/logout', {
-      method: 'POST',
-    });
-  }
-
-  async getCurrentUser(): Promise<{ success: boolean; user: User }> {
-    return this.request<{ success: boolean; user: User }>('/auth/me');
-  }
-
-  async verifyToken(): Promise<{ success: boolean; user: unknown }> {
-    return this.request<{ success: boolean; user: unknown }>('/auth/verify', {
-      method: 'POST',
-    });
-  }
-
-  async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    return this.request<{ status: string; timestamp: string }>('/health');
-  }
-}
-
-export const apiService = new ApiService();
+};

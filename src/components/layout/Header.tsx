@@ -1,24 +1,22 @@
 import { useState } from 'react';
 import { Bell, Search, HelpCircle, Settings, LogOut, User, X } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { logoutUser } from '../../store/slices/authSlice';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import AuthenticationService from '../../services/authentication';
 
 const Header = () => {
-  const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const navigate = useNavigate();
   
   const handleLogout = async () => {
     try {
-      await dispatch(logoutUser()).unwrap();
-      navigate('/login');
+      await AuthenticationService.logoutAsync();
+      await logout();
     } catch (error) {
       // Even if logout fails, navigate to login
-      navigate('/login');
+      await logout();
     }
   };
 
