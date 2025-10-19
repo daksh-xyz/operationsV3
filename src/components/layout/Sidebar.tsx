@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import { Roles } from '../../enums';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, MessageSquare, GitBranch, Play, FileText, BarChart, Settings, Phone, Users, ChevronDown, ChevronRight, Menu, X } from 'lucide-react';
 
@@ -18,6 +20,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const isActive = (path: string) => {
     return location.pathname === path;
   };
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === Roles.SUPER_ADMIN || user?.role === 'super_admin';
+
   return <div className="h-full w-full bg-white border-r border-border flex flex-col">
     {/* Toggle button */}
     <div className="h-16 border-b border-border flex items-center px-6">
@@ -61,35 +66,45 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           <BarChart size={18} className="flex-shrink-0 w-[18px] h-[18px]" />
           <span className={`transition-all duration-300 ease-in-out ${sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 w-0 overflow-hidden'}`}>Analytics</span>
         </Link>
-        <div className={`pt-4 pb-2 transition-all duration-300 ease-in-out ${sidebarOpen ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0 overflow-hidden'}`}>
-          <div className="px-3 text-xs font-medium uppercase text-gray-500">
-            Administration
-          </div>
-        </div>
-        <div onClick={() => { setSidebarOpen(true) }}>
-          <button className={`w-full flex items-center transition-all duration-300 ease-in-out ${sidebarOpen ? 'justify-between px-3' : 'justify-center px-2'} py-2 rounded-md text-sm h-10 ${expandedSection === 'management' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-100'}`} onClick={() => sidebarOpen ? toggleSection('management') : setExpandedSection("management")} title="Management">
-            <div className={`flex items-center transition-all duration-300 ease-in-out ${sidebarOpen ? 'gap-3' : ''}`}>
-              <Users size={18} className="flex-shrink-0 w-[18px] h-[18px]" />
-              <span className={`transition-all duration-300 ease-in-out ${sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 w-0 overflow-hidden'}`}>Management</span>
+        {isSuperAdmin && (
+          <>
+            <div className={`pt-4 pb-2 transition-all duration-300 ease-in-out ${sidebarOpen ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+              <div className="px-3 text-xs font-medium uppercase text-gray-500">
+                Administration
+              </div>
             </div>
-            <div className={`transition-all duration-300 ease-in-out ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>
-              {expandedSection === 'management' ? <ChevronDown size={16} className="w-[16px] h-[16px]" /> : <ChevronRight size={16} className="w-[16px] h-[16px]" />}
+
+            <div onClick={() => { setSidebarOpen(true) }}>
+              <button
+                className={`w-full flex items-center transition-all duration-300 ease-in-out ${sidebarOpen ? 'justify-between px-3' : 'justify-center px-2'} py-2 rounded-md text-sm h-10 ${expandedSection === 'management' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-100'}`}
+                onClick={() => sidebarOpen ? toggleSection('management') : setExpandedSection('management')}
+                title="Management"
+              >
+                <div className={`flex items-center transition-all duration-300 ease-in-out ${sidebarOpen ? 'gap-3' : ''}`}>
+                  <Users size={18} className="flex-shrink-0 w-[18px] h-[18px]" />
+                  <span className={`transition-all duration-300 ease-in-out ${sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 w-0 overflow-hidden'}`}>Management</span>
+                </div>
+                <div className={`transition-all duration-300 ease-in-out ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>
+                  {expandedSection === 'management' ? <ChevronDown size={16} className="w-[16px] h-[16px]" /> : <ChevronRight size={16} className="w-[16px] h-[16px]" />}
+                </div>
+              </button>
+
+              <div className={`transition-all duration-300 ease-in-out ${expandedSection === 'management' && sidebarOpen ? 'opacity-100 max-h-96' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+                <div className="pl-9 pr-3 py-1 space-y-1">
+                  <Link to="/user-management" className={`block px-3 py-1 rounded-md text-sm transition-colors duration-200 ${isActive('/user-management') ? 'bg-black/10 text-black font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+                    User Management
+                  </Link>
+                  <Link to="/roles" className={`block px-3 py-1 rounded-md text-sm transition-colors duration-200 ${isActive('/roles') ? 'bg-black/10 text-black font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+                    Roles & Permissions
+                  </Link>
+                  <Link to="/departments" className={`block px-3 py-1 rounded-md text-sm transition-colors duration-200 ${isActive('/departments') ? 'bg-black/10 text-black font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
+                    Departments
+                  </Link>
+                </div>
+              </div>
             </div>
-          </button>
-          <div className={`transition-all duration-300 ease-in-out ${expandedSection === 'management' && sidebarOpen ? 'opacity-100 max-h-96' : 'opacity-0 max-h-0 overflow-hidden'}`}>
-            <div className="pl-9 pr-3 py-1 space-y-1">
-              <Link to="/user-management" className={`block px-3 py-1 rounded-md text-sm transition-colors duration-200 ${isActive('/user-management') ? 'bg-black/10 text-black font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-                User Management
-              </Link>
-              <Link to="/roles" className={`block px-3 py-1 rounded-md text-sm transition-colors duration-200 ${isActive('/roles') ? 'bg-black/10 text-black font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-                Roles & Permissions
-              </Link>
-              <Link to="/departments" className={`block px-3 py-1 rounded-md text-sm transition-colors duration-200 ${isActive('/departments') ? 'bg-black/10 text-black font-medium' : 'text-gray-700 hover:bg-gray-100'}`}>
-                Departments
-              </Link>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
         <Link to="/settings" className={`flex items-center transition-all duration-300 ease-in-out ${sidebarOpen ? 'gap-3 px-3' : 'justify-center px-2'} py-2 rounded-md text-sm h-10 ${isActive('/settings') ? 'bg-black/10 text-black font-medium' : 'text-gray-700 hover:bg-gray-100'}`} title="Settings">
           <Settings size={18} className="flex-shrink-0 w-[18px] h-[18px]" />
           <span className={`transition-all duration-300 ease-in-out ${sidebarOpen ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 w-0 overflow-hidden'}`}>Settings</span>

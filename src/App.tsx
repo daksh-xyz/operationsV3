@@ -38,9 +38,9 @@ export function App() {
             <Route path="voice-agent" element={<VoiceAgent />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="user-management" element={<UserManagement />} />
-            <Route path="roles" element={<Roles />} />
-            <Route path="departments" element={<Departments />} />
+            <Route path="user-management" element={<ProtectedRoute allowedRoles={["super_admin"]}><UserManagement /></ProtectedRoute>} />
+            <Route path="roles" element={<ProtectedRoute allowedRoles={["super_admin"]}><Roles /></ProtectedRoute>} />
+            <Route path="departments" element={<ProtectedRoute allowedRoles={["super_admin"]}><Departments /></ProtectedRoute>} />
           </Route>
         </Routes>
       </AuthProvider>
